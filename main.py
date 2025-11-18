@@ -30,6 +30,10 @@ class VITSPlugin(Star):
         self.speed = config.get('speed', 1.0)  # 音频播放速度
         self.gain = config.get('gain', 0.0)  # 音频增益
         self.enabled = config.get('global_enabled', True)  # 从配置读取全局开关状态（与schema默认一致）
+        # 文本预处理相关开关
+        self.read_brackets = bool(config.get('read_brackets', True))  # 是否朗读括号中的内容
+        self.filter_symbols_enabled = bool(config.get('filter_symbols_enabled', False))  # 是否过滤符号
+        self.filter_symbols = config.get('filter_symbols', ["+", "-", "=", "/"])  # 需要过滤的符号列表
         self.reference_mode = bool(config.get('reference_mode', False))  # 参考模式：语音+原文
         self.debug_tts_input = bool(config.get('debug_tts_input', False))  # 调试：先发出完整的TTS输入文本
         self.only_llm_tts = bool(config.get('only_llm_tts', False))  # 仅对AI模型回复进行TTS
@@ -93,8 +97,48 @@ class VITSPlugin(Star):
                 return plain_text
         except Exception:
             pass
-        # 插件不再添加前缀，直接透传
-        return plain_text
+        # 文本预处理：可选删除括号内容与配置中的符号
+        text = plain_text
+
+        # 1) 可选：删除圆括号和方括号中的内容（常用于旁白、注释）
+        #    仅在关闭 read_brackets 时生效
+        if not self.read_brackets:
+            try:
+                # 非贪婪匹配，删除中英文圆括号和方括号中的内容（包含括号本身）
+                # 英文圆括号 ()
+                text = re.sub(r"\([^\)]*\)", "", text)
+                # 英文方括号 []
+                text = re.sub(r"\[[^\]]*\]", "", text)
+                # 中文圆括号 （）
+                text = re.sub(r"（[^）]*）", "", text)
+                # 中文方括号 【】
+                text = re.sub(r"【[^】]*】", "", text)
+            except Exception:
+                pass
+
+        # 2) 可选：过滤指定符号字符
+        if self.filter_symbols_enabled:
+            try:
+                # 将配置项统一为字符串列表
+                symbols = []
+                raw_symbols = self.filter_symbols or []
+                for s in raw_symbols:
+                    try:
+                        ch = str(s)
+                    except Exception:
+                        continue
+                    if ch:
+                        symbols.append(ch)
+
+                if symbols:
+                    # 为安全起见逐个替换，而不是拼 regex
+                    for sym in symbols:
+                        text = text.replace(sym, "")
+            except Exception:
+                pass
+
+        # 插件不再添加前缀，直接透传预处理后的文本
+        return text
 
     def _strip_end_marker_prefix_in_chain(self, result) -> None:
         """若文本开头包含任意以 <|endofprompt|> 结尾的前缀，则在消息链中剔除。"""
