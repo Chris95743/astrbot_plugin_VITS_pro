@@ -1,6 +1,6 @@
 name: astrbot_plugin_VITS_pro # 这是你的插件的唯一识别名。
 desc: 硅基流动api语音合成（此版本相比于原插件改动较多，部分功能不稳定，故开一个新坑用于实验） # 插件简短描述
 help: 输入/vits启用和关闭插件 。 # 插件的帮助信息
-version: v1.8.0 # 插件版本号。格式：v1.1.1 或者 v1.1
+version: v1.9.0 # 插件版本号。格式：v1.1.1 或者 v1.1
 author: Chris95743/第九位魔神 # 作者
 repo: https://github.com/Chris95743/astrbot_plugin_VITS_pro # 插件的仓库地址
