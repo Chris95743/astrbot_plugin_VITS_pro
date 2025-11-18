@@ -1,7 +1,7 @@
 # AstrBot Plugin VITS Pro
 
-> 实验性增强版 · 当前版本：**v1.8.0**  
-> 新增：降低了插件优先度，避免和其他插件在装饰阶段冲突。
+> 实验性增强版 · 当前版本：**v1.9.0**  
+> 新增：加入了一些对文本的清洗选项。
 
 <p align="left">
   <img src="https://img.shields.io/badge/version-v1.8.0-blue.svg" />
