@@ -93,5 +93,23 @@
         "type": "int",
         "hint": "保存到 data/astrbot_plugin_vits/tts/ 的 .wav 文件数量上限。超过后自动删除最早的。设置为 0 表示不限制。",
         "default": 5
+    },
+    "read_brackets": {
+        "description": "是否朗读括号中的内容",
+        "type": "bool",
+        "hint": "关闭后，将删除圆括号和方括号中的内容再送去TTS（如旁白、注释等）",
+        "default": true
+    },
+    "filter_symbols_enabled": {
+        "description": "是否过滤指定符号",
+        "type": "bool",
+        "hint": "开启后，将从文本中移除下面列表中配置的符号字符再送去TTS",
+        "default": false
+    },
+    "filter_symbols": {
+        "description": "需要过滤掉不朗读的符号字符",
+        "type": "list",
+        "hint": "这些符号会在TTS前被删除，例如默认值中的 + - = / 等，用户可自行增删",
+        "default": ["+", "-", "=", "/"]
     }
 }
