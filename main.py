@@ -32,6 +32,10 @@ class VITSPlugin(Star):
         self.enabled = config.get('global_enabled', True)  # 从配置读取全局开关状态（与schema默认一致）
         # 文本预处理相关开关
         self.read_brackets = bool(config.get('read_brackets', True))  # 是否朗读括号中的内容
+        # 需要过滤的括号对列表，每项形如 "()"，首字符为开括号、末字符为闭括号
+        self.filter_brackets = config.get('filter_brackets', [
+            "()", "（）", "[]", "［］", "【】", "〔〕", "〖〗", "〘〙", "﹙﹚", "﹝﹞", "︵︶", "⦅⦆"
+        ])
         self.filter_symbols_enabled = bool(config.get('filter_symbols_enabled', False))  # 是否过滤符号
         self.filter_symbols = config.get('filter_symbols', ["+", "-", "=", "/"])  # 需要过滤的符号列表
         self.reference_mode = bool(config.get('reference_mode', False))  # 参考模式：语音+原文
@@ -104,24 +108,34 @@ class VITSPlugin(Star):
         #    仅在关闭 read_brackets 时生效
         if not self.read_brackets:
             try:
-                # 按“形状”分组匹配：同一组内的任意开括号可与任意闭括号配对，
-                # 以兼容全角/半角/CJK 兼容形式，以及 LLM 常见的混用写法（如 “（旁白)”）
-                bracket_patterns = (
-                    # 圆括号类：( （ ﹙ ︵ ⦅
-                    r"[(（﹙︵⦅][^(（﹙︵⦅)）﹚︶⦆]*[)）﹚︶⦆]",
-                    # 方括号类：[ ［ 【 〔 〖 〘 ﹝
-                    r"[\[［【〔〖〘﹝][^\[［【〔〖〘﹝\]］】〕〗〙﹞]*[\]］】〕〗〙﹞]",
-                )
-                # 循环直到不再变化，从而清理嵌套括号；限制次数避免异常输入下死循环
-                for _ in range(5):
-                    new_text = text
-                    for pattern in bracket_patterns:
-                        new_text = re.sub(pattern, "", new_text)
-                    if new_text == text:
-                        break
-                    text = new_text
-                # 删除后可能留下多余空白，做一次收敛
-                text = re.sub(r"[ \t]{2,}", " ", text).strip()
+                # 从配置的括号对列表中收集所有开/闭括号字符
+                openers = ""
+                closers = ""
+                for pair in self.filter_brackets or []:
+                    try:
+                        p = str(pair).strip()
+                    except Exception:
+                        continue
+                    if len(p) >= 2:
+                        openers += p[0]
+                        closers += p[-1]
+
+                if openers and closers:
+                    # 开括号类 + 不含任何括号的内容 + 闭括号类；
+                    # 开/闭字符各自成类，因此全角与半角混用（如 “（旁白)”）同样能匹配
+                    pattern = (
+                        f"[{re.escape(openers)}]"
+                        f"[^{re.escape(openers + closers)}]*"
+                        f"[{re.escape(closers)}]"
+                    )
+                    # 循环直到不再变化，从而清理嵌套括号；限制次数避免异常输入下死循环
+                    for _ in range(5):
+                        new_text = re.sub(pattern, "", text)
+                        if new_text == text:
+                            break
+                        text = new_text
+                    # 删除后可能留下多余空白，做一次收敛
+                    text = re.sub(r"[ \t]{2,}", " ", text).strip()
             except Exception:
                 pass
 
