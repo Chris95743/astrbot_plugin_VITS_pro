@@ -97,7 +97,7 @@
     "read_brackets": {
         "description": "是否朗读括号中的内容",
         "type": "bool",
-        "hint": "关闭后，将删除圆括号和方括号中的内容再送去TTS（如旁白、注释等）",
+        "hint": "关闭后，将删除圆括号与方括号中的内容再送去TTS（如旁白、注释等）。已兼容半角/全角及各类变体：() （） ﹙﹚ ︵︶ ⦅⦆ [] ［］ 【】 〔〕 〖〗 〘〙 ﹝﹞，支持嵌套与全半角混用",
         "default": true
     },
     "filter_symbols_enabled": {
