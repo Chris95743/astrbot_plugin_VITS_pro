@@ -104,15 +104,24 @@ class VITSPlugin(Star):
         #    仅在关闭 read_brackets 时生效
         if not self.read_brackets:
             try:
-                # 非贪婪匹配，删除中英文圆括号和方括号中的内容（包含括号本身）
-                # 英文圆括号 ()
-                text = re.sub(r"\([^\)]*\)", "", text)
-                # 英文方括号 []
-                text = re.sub(r"\[[^\]]*\]", "", text)
-                # 中文圆括号 （）
-                text = re.sub(r"（[^）]*）", "", text)
-                # 中文方括号 【】
-                text = re.sub(r"【[^】]*】", "", text)
+                # 按“形状”分组匹配：同一组内的任意开括号可与任意闭括号配对，
+                # 以兼容全角/半角/CJK 兼容形式，以及 LLM 常见的混用写法（如 “（旁白)”）
+                bracket_patterns = (
+                    # 圆括号类：( （ ﹙ ︵ ⦅
+                    r"[(（﹙︵⦅][^(（﹙︵⦅)）﹚︶⦆]*[)）﹚︶⦆]",
+                    # 方括号类：[ ［ 【 〔 〖 〘 ﹝
+                    r"[\[［【〔〖〘﹝][^\[［【〔〖〘﹝\]］】〕〗〙﹞]*[\]］】〕〗〙﹞]",
+                )
+                # 循环直到不再变化，从而清理嵌套括号；限制次数避免异常输入下死循环
+                for _ in range(5):
+                    new_text = text
+                    for pattern in bracket_patterns:
+                        new_text = re.sub(pattern, "", new_text)
+                    if new_text == text:
+                        break
+                    text = new_text
+                # 删除后可能留下多余空白，做一次收敛
+                text = re.sub(r"[ \t]{2,}", " ", text).strip()
             except Exception:
                 pass
 
